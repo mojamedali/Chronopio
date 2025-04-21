@@ -1,6 +1,7 @@
 from datetime import datetime
 import qtawesome as qta
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel
+from PySide6.QtGui import QIcon
 from PySide6.QtCore import QTime, QTimer, Qt
 from . import sessionlogger as sl
 
@@ -8,6 +9,8 @@ from . import sessionlogger as sl
 class Chronopio(QWidget):
     def __init__(self):
         super().__init__()
+
+        self.setWindowIcon(QIcon.fromTheme("chronopio"))
 
         self.setWindowTitle("Chronopio")
         self.resize(350, 300)

@@ -1,5 +1,7 @@
-import sqlite3
+import sqlite3, os
+from pathlib import Path
 from dataclasses import dataclass
+
 
 @dataclass
 class SessionData:
@@ -12,8 +14,19 @@ class SessionData:
 
 class SessionLogger():
     def __init__(self):
-        self.conn = sqlite3.connect("cronopio.db")
+        userDir = self.get_user_data_dir()
+        userDir.mkdir(parents=True, exist_ok=True) 
+        dbPath = userDir / 'cronopio.db'
+        self.conn = sqlite3.connect(dbPath)
         self.create_table()
+
+    def __del__(self):
+        if self.conn:
+            self.conn.close()
+
+    def get_user_data_dir(self):
+        return Path(os.getenv('XDG_DATA_HOME', str(Path.home() / '.local' / 'share'))) / 'chronopio'
+    
 
     def create_table(self):
         cursor = self.conn.cursor()

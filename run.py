@@ -1,10 +1,5 @@
-
 import sys
-from PySide6.QtWidgets import QApplication
-from src.chronopio import Chronopio
+sys.path.insert(0, "src")
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = Chronopio()
-    window.show()
-    sys.exit(app.exec())
+from chronopio.__main__ import main
+main()

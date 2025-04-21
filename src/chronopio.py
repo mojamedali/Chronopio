@@ -1,7 +1,8 @@
-import sys
+from datetime import datetime
 import qtawesome as qta
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel
 from PySide6.QtCore import QTime, QTimer, Qt
+from . import sessionlogger as sl
 
 
 class Chronopio(QWidget):
@@ -30,7 +31,6 @@ class Chronopio(QWidget):
         self.pomodoroButton.clicked.connect(self.toggle_pomodoro_timer)
         self.runLayout.addWidget(self.pomodoroButton)
         
-        
         self.timerLayout.addLayout(self.runLayout)
 
         self.resetButton = QPushButton("Reset", self)
@@ -47,12 +47,26 @@ class Chronopio(QWidget):
         self.standardTimer = False # Run standard timer Status
         self.pomodoro = False # Run Pomodoro Status
 
+        self.session = sl.SessionData(
+                start_time="00:00:00",
+                end_time="00:00:00",
+                duration=0,
+                mode="",
+                sessiondate=0
+            )
+        
+        self.logger = sl.SessionLogger()
+
     def toggle_run_timer(self):
         if self.standardTimer:
             self.timer.stop()
             self.runButton.setText(" Continue")
             self.runButton.setIcon(qta.icon("mdi.play"))
+            self.save_data()
         else: 
+            self.session.start_time = datetime.now()
+            self.session.mode = "Standard"
+            self.session.sessiondate = int(self.session.start_time.strftime("%Y%m%d"))
             self.timer.start(1000) # Update every second
             self.runButton.setText(" Stop")
             self.runButton.setIcon(qta.icon("mdi.stop"))
@@ -66,7 +80,11 @@ class Chronopio(QWidget):
             self.timer.stop()
             self.pomodoroButton.setText(" Continue")
             self.pomodoroButton.setIcon(qta.icon("mdi.food-apple"))
+            self.save_data()
         else: 
+            self.session.start_time = datetime.now()
+            self.session.mode = "Pomodoro"
+            self.session.sessiondate = int(self.session.start_time.strftime("%Y%m%d"))
             if self.time == QTime(0, 0, 0): 
                 self.label.setText("00:25:00")
                 self.time = QTime(0, 25, 0)
@@ -96,10 +114,9 @@ class Chronopio(QWidget):
         isEnable = (not self.running) and (self.time != QTime(0, 0, 0))
         self.resetButton.setEnabled(isEnable)
 
+    def save_data(self):
+        self.session.end_time = datetime.now()
+        self.session.duration = int((self.session.end_time - self.session.start_time).total_seconds())
+        self.logger.save_session(self.session)
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = Chronopio()
-    window.show()
-    sys.exit(app.exec())
 

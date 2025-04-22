@@ -42,7 +42,7 @@ pip install PySide6 QtAwesome
 ## ▶️ Run
 
 ```bash
-python src/tracker.py
+python3 run.py
 ```
 
 ---

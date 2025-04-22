@@ -87,11 +87,28 @@ class SessionLogger():
         self.conn.commit()
 
     
-    def get_tasks(self):
+    def get_tasks(self, parentTask=False):
         cursor = self.conn.cursor()
-        cursor.execute("""
-            SELECT id, title FROM tasks
-        """)
+        if not parentTask:
+            cursor.execute("""
+                SELECT 
+                    id,
+                    CASE 
+                        WHEN parent = 0 THEN title
+                        ELSE '  -  ' || title
+                    END AS title
+                FROM tasks
+                ORDER BY 
+                    CASE 
+                        WHEN parent = 0 THEN id
+                        ELSE parent
+                    END,
+                    id;
+            """)
+        else: 
+            cursor.execute("""
+                SELECT id, title FROM tasks WHERE parent = 0
+            """)
 
         rows = cursor.fetchall()
 

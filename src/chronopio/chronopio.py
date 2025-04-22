@@ -2,11 +2,12 @@ from datetime import datetime
 import qtawesome as qta
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
-    QLabel, QComboBox, QGroupBox
+    QLabel, QComboBox, QGroupBox, QDialog
     )
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import QTime, QTimer, Qt
 from . import sessionlogger as sl
+from . import newtaskdialog
 
 
 class Chronopio(QWidget):
@@ -16,7 +17,7 @@ class Chronopio(QWidget):
         self.setWindowIcon(QIcon.fromTheme("chronopio"))
 
         self.setWindowTitle("Chronopio")
-        self.resize(350, 300)
+        self.resize(400, 400)
 
         self.timerLayout = QVBoxLayout()
         self.setLayout(self.timerLayout)
@@ -25,7 +26,7 @@ class Chronopio(QWidget):
         self.logger = sl.SessionLogger()        
 
         self.taskCombo = QComboBox()
-        self.load_tasks()
+        self.load_tasks(False)
         self.timerLayout.addWidget(self.taskCombo)
         self.taskCombo.currentIndexChanged.connect(self.handle_task_selection)
 
@@ -138,8 +139,8 @@ class Chronopio(QWidget):
         self.session.duration = int((self.session.end_time - self.session.start_time).total_seconds())
         self.logger.save_session(self.session)
 
-    def load_tasks(self):
-        tasks = self.logger.get_tasks()
+    def load_tasks(self, parentTask=False):
+        tasks = self.logger.get_tasks(parentTask)
         
         self.taskCombo.clear()
 
@@ -157,6 +158,30 @@ class Chronopio(QWidget):
         self.controlsPanel.setEnabled(isValid)
         if isValid:
             self.session.taskid = taskId
+        elif taskId == -1: 
+            self.create_new_task()
+
+    def create_new_task(self):
+        existingTasks = self.logger.get_tasks(True)
+
+        dialog = newtaskdialog.NewTaskDialog(self, existingTasks)
+        if dialog.exec() == QDialog.Accepted:
+            data = dialog.get_task_data()
+            if not data['title']:
+                return
+            
+            cursor = self.logger.conn.cursor()
+            cursor.execute("""
+                INSERT INTO tasks (title, parent, tags)
+                VALUES (?, ?, ?)
+            """, 
+            (
+                data['title'], data['parent'], data['tags']
+            ))
+            self.logger.conn.commit()
+
+        self.load_tasks()
+        
 
 
 

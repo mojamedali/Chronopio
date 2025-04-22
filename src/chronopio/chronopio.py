@@ -1,6 +1,9 @@
 from datetime import datetime
 import qtawesome as qta
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
+    QLabel, QComboBox, QGroupBox
+    )
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import QTime, QTimer, Qt
 from . import sessionlogger as sl
@@ -19,10 +22,25 @@ class Chronopio(QWidget):
         self.setLayout(self.timerLayout)
         self.runLayout = QHBoxLayout()
 
+        self.logger = sl.SessionLogger()        
+
+        self.taskCombo = QComboBox()
+        self.load_tasks()
+        self.timerLayout.addWidget(self.taskCombo)
+        self.taskCombo.currentIndexChanged.connect(self.handle_task_selection)
+
+        self.controlsPanel = QGroupBox()
+        self.controlsLayout = QVBoxLayout()
+        self.controlsPanel.setLayout(self.controlsLayout)
+        self.controlsPanel.setEnabled(False)
+        self.timerLayout.addWidget(self.controlsPanel)        
+
         self.label = QLabel("00:00:00", self)
         self.label.setStyleSheet('font-size: 32px; text-align: center;')
         self.label.setAlignment(Qt.AlignCenter)
-        self.timerLayout.addWidget(self.label)
+        self.controlsLayout.addWidget(self.label)
+
+        self.controlsLayout.addLayout(self.runLayout)
 
         self.runButton = QPushButton(" Start", self)
         self.runButton.setIcon(qta.icon("mdi.play"))
@@ -34,13 +52,11 @@ class Chronopio(QWidget):
         self.pomodoroButton.clicked.connect(self.toggle_pomodoro_timer)
         self.runLayout.addWidget(self.pomodoroButton)
         
-        self.timerLayout.addLayout(self.runLayout)
-
         self.resetButton = QPushButton("Reset", self)
         self.resetButton.clicked.connect(self.reset_timer)
         self.resetButton.setIcon(qta.icon("mdi.recycle-variant"))
         self.resetButton.setEnabled(False)    
-        self.timerLayout.addWidget(self.resetButton)
+        self.controlsLayout.addWidget(self.resetButton)
     
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_time)
@@ -51,14 +67,14 @@ class Chronopio(QWidget):
         self.pomodoro = False # Run Pomodoro Status
 
         self.session = sl.SessionData(
+                taskid=0, 
                 start_time="00:00:00",
                 end_time="00:00:00",
                 duration=0,
                 mode="",
                 sessiondate=0
             )
-        
-        self.logger = sl.SessionLogger()
+
 
     def toggle_run_timer(self):
         if self.standardTimer:
@@ -121,5 +137,29 @@ class Chronopio(QWidget):
         self.session.end_time = datetime.now()
         self.session.duration = int((self.session.end_time - self.session.start_time).total_seconds())
         self.logger.save_session(self.session)
+
+    def load_tasks(self):
+        tasks = self.logger.get_tasks()
+        
+        self.taskCombo.clear()
+
+        self.taskCombo.addItem("Select task...", None)
+        self.taskCombo.addItem(" + New Task", -1)
+
+        for task in tasks:
+            id, title = task
+            self.taskCombo.addItem(title, id)
+
+
+    def handle_task_selection(self):
+        taskId = self.taskCombo.currentData()
+        isValid = taskId is not None and taskId != -1
+        self.controlsPanel.setEnabled(isValid)
+        if isValid:
+            self.session.taskid = taskId
+
+
+
+
 
 

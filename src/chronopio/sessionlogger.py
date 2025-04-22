@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 @dataclass
 class SessionData:
+    taskid: int
     start_time: str 
     end_time: str 
     duration: int 
@@ -17,8 +18,10 @@ class SessionLogger():
         userDir = self.get_user_data_dir()
         userDir.mkdir(parents=True, exist_ok=True) 
         dbPath = userDir / 'cronopio.db'
+        dbExists = os.path.exists(dbPath)
         self.conn = sqlite3.connect(dbPath)
-        self.create_table()
+        if not dbExists:
+            self.create_db_objects()
 
     def __del__(self):
         if self.conn:
@@ -28,16 +31,17 @@ class SessionLogger():
         return Path(os.getenv('XDG_DATA_HOME', str(Path.home() / '.local' / 'share'))) / 'chronopio'
     
 
-    def create_table(self):
+    def create_db_objects(self):
         cursor = self.conn.cursor()
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS sessions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                start_time TEXT,
-                end_time TEXT,
-                duration INTEGER,
-                mode TEXT,
-                sessiondate INTEGER
+                task_id INTEGER NOT NULL, 
+                start_time TEXT NOT NULL,
+                end_time TEXT NOT NULL,
+                duration INTEGER NOT NULL,
+                mode TEXT NOT NULL,
+                sessiondate INTEGER NOT NULL
             )
         """)
 
@@ -45,15 +49,35 @@ class SessionLogger():
             CREATE INDEX IF NOT EXISTS idx_sessiondate ON sessions(sessiondate)
         """)
 
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS tasks (
+	            id	INTEGER PRIMARY KEY AUTOINCREMENT,
+	            parent	INTEGER NOT NULL DEFAULT 0,
+	            title	TEXT NOT NULL,
+	            tags	TEXT
+            )
+        """)
+        
+        cursor.execute("""
+            SELECT count(1) FROM tasks
+        """)
+        count = cursor.fetchone()[0]
+        if count == 0:
+            cursor.execute("""
+                INSERT INTO tasks (title, tags)
+                    VALUES ('Free Task', 'Free')
+            """)
+
         self.conn.commit()
 
 
     def save_session(self, session: SessionData):
         cursor = self.conn.cursor()
         cursor.execute("""
-            INSERT INTO sessions (start_time, end_time, duration, mode, sessiondate)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO sessions (task_id, start_time, end_time, duration, mode, sessiondate)
+            VALUES (?, ?, ?, ?, ?, ?)
         """, (
+            session.taskid, 
             session.start_time, 
             session.end_time, 
             session.duration, 
@@ -61,3 +85,14 @@ class SessionLogger():
             session.sessiondate
         ))
         self.conn.commit()
+
+    
+    def get_tasks(self):
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT id, title FROM tasks
+        """)
+
+        rows = cursor.fetchall()
+
+        return rows

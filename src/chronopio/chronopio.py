@@ -90,6 +90,7 @@ class Chronopio(QWidget):
             self.timer.start(1000) # Update every second
             self.runButton.setText(" Stop")
             self.runButton.setIcon(qta.icon("mdi.stop"))
+            self.taskCombo.setEnabled(False)
         self.running = not self.running
         self.standardTimer = not self.standardTimer
         self.pomodoroButton.setVisible(False)
@@ -111,6 +112,7 @@ class Chronopio(QWidget):
             self.timer.start(1000)
             self.pomodoroButton.setText(" Stop")
             self.pomodoroButton.setIcon(qta.icon("mdi.stop"))
+            self.taskCombo.setEnabled(False)
         self.running = not self.running
         self.pomodoro = not self.pomodoro
         self.runButton.setVisible(False)
@@ -129,6 +131,8 @@ class Chronopio(QWidget):
         self.resetButton.setEnabled(False)
         self.pomodoroButton.setVisible(True)
         self.runButton.setVisible(True)
+        self.load_tasks(False)
+        self.taskCombo.setEnabled(True)
 
     def reset_disability(self):
         isEnable = (not self.running) and (self.time != QTime(0, 0, 0))

@@ -15,7 +15,6 @@ It features:
 ## 📸 Preview
 
 ![screenshot](docs/screenshot.png)  
-*(Add your own screenshot in `docs/screenshot.png`)*
 
 ---
 

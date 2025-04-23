@@ -1,32 +1,51 @@
 from datetime import datetime
 import qtawesome as qta
+from pathlib import Path
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
     QLabel, QComboBox, QGroupBox, QDialog
     )
+from PySide6.QtMultimedia import QSoundEffect 
 from PySide6.QtGui import QIcon
-from PySide6.QtCore import QTime, QTimer, Qt
+from PySide6.QtCore import QTime, QTimer, Qt, QUrl
 from . import sessionlogger as sl
 from . import newtaskdialog
+
+DEFAULT_POMODORO_DURATION = QTime(0, 25, 0)  # o 0, 0, 20 for test
 
 
 class Chronopio(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setWindowIcon(QIcon.fromTheme("chronopio"))
+        self.set_window()  
+        self.set_controls()
+        self.set_timer()
+        self.set_session() 
+        self.load_tasks(False)
 
+
+    def set_timer(self):
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_time)
+
+        self.time = QTime(0, 0, 0)
+        self.running = False # General running
+        self.standardTimer = False # Run standard timer Status
+        self.pomodoro = False # Run Pomodoro Status
+
+
+    def set_window(self):
+        self.setWindowIcon(QIcon.fromTheme("chronopio"))
         self.setWindowTitle("Chronopio")
         self.resize(400, 400)
 
+    def set_controls(self):
         self.timerLayout = QVBoxLayout()
         self.setLayout(self.timerLayout)
-        self.runLayout = QHBoxLayout()
-
-        self.logger = sl.SessionLogger()        
+        self.runLayout = QHBoxLayout()     
 
         self.taskCombo = QComboBox()
-        self.load_tasks(False)
         self.timerLayout.addWidget(self.taskCombo)
         self.taskCombo.currentIndexChanged.connect(self.handle_task_selection)
 
@@ -58,14 +77,10 @@ class Chronopio(QWidget):
         self.resetButton.setIcon(qta.icon("mdi.recycle-variant"))
         self.resetButton.setEnabled(False)    
         self.controlsLayout.addWidget(self.resetButton)
-    
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_time)
 
-        self.time = QTime(0, 0, 0)
-        self.running = False # General running
-        self.standardTimer = False # Run standard timer Status
-        self.pomodoro = False # Run Pomodoro Status
+
+    def set_session(self):
+        self.logger = sl.SessionLogger()
 
         self.session = sl.SessionData(
                 taskid=0, 
@@ -75,7 +90,7 @@ class Chronopio(QWidget):
                 mode="",
                 sessiondate=0
             )
-
+        
 
     def toggle_run_timer(self):
         if self.standardTimer:
@@ -94,7 +109,7 @@ class Chronopio(QWidget):
         self.running = not self.running
         self.standardTimer = not self.standardTimer
         self.pomodoroButton.setVisible(False)
-        self.reset_disability()
+        self.update_reset_button_state()
 
     def toggle_pomodoro_timer(self):
         if self.pomodoro:
@@ -102,13 +117,14 @@ class Chronopio(QWidget):
             self.pomodoroButton.setText(" Continue")
             self.pomodoroButton.setIcon(qta.icon("mdi.food-apple"))
             self.save_data()
+            # if self.time == QTime(0, 0, 10):
+            #    self.play_pomodoro_alarm()
         else: 
             self.session.start_time = datetime.now()
             self.session.mode = "Pomodoro"
             self.session.sessiondate = int(self.session.start_time.strftime("%Y%m%d"))
             if self.time == QTime(0, 0, 0): 
-                self.label.setText("00:25:00")
-                self.time = QTime(0, 25, 0)
+                self.time = DEFAULT_POMODORO_DURATION
             self.timer.start(1000)
             self.pomodoroButton.setText(" Stop")
             self.pomodoroButton.setIcon(qta.icon("mdi.stop"))
@@ -116,11 +132,17 @@ class Chronopio(QWidget):
         self.running = not self.running
         self.pomodoro = not self.pomodoro
         self.runButton.setVisible(False)
-        self.reset_disability()
+        self.update_reset_button_state()
+        
 
     def update_time(self):
         if self.pomodoro:
             self.time = self.time.addSecs(-1)
+            if self.time == QTime(0, 0, 11):
+                self.play_pomodoro_alarm()                
+            elif self.time == QTime(0, 0, 0):
+                self.time = QTime(0, 0, 0, 1) # Add 1ms to accomplish condition in update_reset_button_state
+                self.toggle_pomodoro_timer()
         else: 
             self.time = self.time.addSecs(1)
         self.label.setText(self.time.toString("hh:mm:ss"))
@@ -134,7 +156,7 @@ class Chronopio(QWidget):
         self.load_tasks(False)
         self.taskCombo.setEnabled(True)
 
-    def reset_disability(self):
+    def update_reset_button_state(self):
         isEnable = (not self.running) and (self.time != QTime(0, 0, 0))
         self.resetButton.setEnabled(isEnable)
 
@@ -187,6 +209,14 @@ class Chronopio(QWidget):
         self.load_tasks()
         
 
+    def play_pomodoro_alarm(self):
+        self.alarmAudio = QSoundEffect()
+        soundPath = Path(__file__).parent.parent.parent / 'assets' / 'sounds' / 'alarm.wav'
+
+        self.alarmAudio.setSource(QUrl.fromLocalFile(str(soundPath.resolve())))
+        self.alarmAudio.setVolume(.9)
+
+        self.alarmAudio.play()
 
 
 

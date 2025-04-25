@@ -12,7 +12,7 @@ from PySide6.QtCore import QTime, QTimer, Qt, QUrl
 from . import sessionlogger as sl
 from . import newtaskdialog
 
-DEFAULT_POMODORO_DURATION = QTime(0, 0, 15)  # o 0, 0, 20 for test
+DEFAULT_POMODORO_DURATION = QTime(0, 0, 15, 0)  # o 0, 0, 15, 0 for test
 
 class TimerMode(Enum):
     NO_MODE     = 0
@@ -38,14 +38,13 @@ class Chronopio(QWidget):
 
         self.time = QTime(0, 0, 0)
         self.isRunning = False
-        # self.standardTimer = False # Run standard timer Status
-        # self.pomodoro = False # Run Pomodoro Status
 
 
     def set_window(self):
         self.setWindowIcon(QIcon.fromTheme("chronopio"))
         self.setWindowTitle("Chronopio")
         self.resize(400, 400)
+        
 
     def set_controls(self):
         self.timerLayout = QVBoxLayout()
@@ -69,10 +68,10 @@ class Chronopio(QWidget):
 
         self.controlsLayout.addLayout(self.runLayout)
 
-        self.runButton = QPushButton(" Start", self)
-        self.runButton.setIcon(qta.icon("mdi.play"))
-        self.runButton.clicked.connect(self.toggle_run_timer)
-        self.runLayout.addWidget(self.runButton)
+        self.standardButton = QPushButton(" Start", self)
+        self.standardButton.setIcon(qta.icon("mdi.play"))
+        self.standardButton.clicked.connect(self.toggle_standard_session)
+        self.runLayout.addWidget(self.standardButton)
 
         self.pomodoroButton = QPushButton("Pomodoro", self)
         self.pomodoroButton.setIcon(qta.icon("mdi.food-apple"))
@@ -99,60 +98,18 @@ class Chronopio(QWidget):
             )
         
 
-    def toggle_run_timer(self):
-        if self.timerMode.STANDARD:
-            self.timer.stop()
-            self.runButton.setText(" Continue")
-            self.runButton.setIcon(qta.icon("mdi.play"))
-            self.save_data()
-        else: 
-            self.session.start_time = datetime.now()
-            self.session.mode = "Standard"
-            self.session.sessiondate = int(self.session.start_time.strftime("%Y%m%d"))
-            self.timer.start(1000) # Update every second
-            self.runButton.setText(" Stop")
-            self.runButton.setIcon(qta.icon("mdi.stop"))
-            self.taskCombo.setEnabled(False)
-        self.running = not self.running
-        self.standardTimer = not self.standardTimer
-        self.pomodoroButton.setVisible(False)
-        self.update_reset_button_state()
-
-    def toggle_pomodoro_timer(self):
-        if self.timerMode.POMODORO:
-            self.timer.stop()
-            self.pomodoroButton.setText(" Continue")
-            self.pomodoroButton.setIcon(qta.icon("mdi.food-apple"))
-            self.save_data()
-            # if self.time == QTime(0, 0, 10):
-            #    self.play_pomodoro_alarm()
-        else: 
-            self.session.start_time = datetime.now()
-            self.session.mode = "Pomodoro"
-            self.session.sessiondate = int(self.session.start_time.strftime("%Y%m%d"))
-            if self.time == QTime(0, 0, 0): 
-                self.time = DEFAULT_POMODORO_DURATION
-            self.timer.start(1000)
-            self.pomodoroButton.setText(" Stop")
-            self.pomodoroButton.setIcon(qta.icon("mdi.stop"))
-            self.taskCombo.setEnabled(False)
-        self.isRunning = not self.isRunning
-        self.pomodoro = not self.pomodoro
-        self.runButton.setVisible(False)
-        self.update_reset_button_state()
-        
-
     def update_time(self):
         if self.timerMode == TimerMode.POMODORO:
             self.time = self.time.addSecs(-1)
             if self.time == QTime(0, 0, 11):
                 self.play_pomodoro_alarm()                
             elif self.time == QTime(0, 0, 0):
-                self.stop_timer()                
+                self.toggle_pomodoro_session()  
                 self.time = QTime(0, 0, 0, 1) # Add 1ms to accomplish condition in update_reset_button_state
         else: 
             self.time = self.time.addSecs(1)
         self.label.setText(self.time.toString("hh:mm:ss"))
+
 
     def reset_timer(self):
         self.time.setHMS(0, 0, 0)
@@ -160,18 +117,21 @@ class Chronopio(QWidget):
         self.timerMode = TimerMode.NO_MODE
         self.resetButton.setEnabled(False)
         self.pomodoroButton.setVisible(True)
-        self.runButton.setVisible(True)
+        self.standardButton.setVisible(True)
         self.load_tasks(False)
         self.taskCombo.setEnabled(True)
 
+
     def update_reset_button_state(self):
-        isEnable = (not self.isRunning) and (self.time != QTime(0, 0, 0))
+        isEnable = (not self.isRunning) 
         self.resetButton.setEnabled(isEnable)
+
 
     def save_data(self):
         self.session.end_time = datetime.now()
         self.session.duration = int((self.session.end_time - self.session.start_time).total_seconds())
         self.logger.save_session(self.session)
+
 
     def load_tasks(self, parentTask=False):
         tasks = self.logger.get_tasks(parentTask)
@@ -194,6 +154,7 @@ class Chronopio(QWidget):
             self.session.taskid = taskId
         elif taskId == -1: 
             self.create_new_task()
+
 
     def create_new_task(self):
         existingTasks = self.logger.get_tasks(True)
@@ -226,22 +187,35 @@ class Chronopio(QWidget):
 
         self.alarmAudio.play()
 
+
+    def toggle_standard_session(self):
+        self.pomodoroButton.setVisible(False)
+        if self.isRunning:
+            self.stop_timer()
+            self.standardButton.setText(" Continue")
+            self.standardButton.setIcon(qta.icon("mdi.play"))
+        else:
+            self.timerMode = TimerMode.STANDARD   
+            self.start_timer()         
+            self.standardButton.setText(" Stop")
+            self.standardButton.setIcon(qta.icon("mdi.stop"))            
+
     
     def toggle_pomodoro_session(self):
-        self.runButton.setVisible(False)
+        self.standardButton.setVisible(False)
         if self.isRunning:
             self.stop_timer()
             self.pomodoroButton.setText(" Continue")
             self.pomodoroButton.setIcon(qta.icon("mdi.food-apple"))
         else:
-            self.start_timer()
-            self.timerMode = TimerMode.POMODORO            
+            self.timerMode = TimerMode.POMODORO  
+            self.start_timer()          
             self.pomodoroButton.setText(" Stop")
             self.pomodoroButton.setIcon(qta.icon("mdi.stop"))            
-        if self.time == QTime(0, 0, 0): 
+        if self.time <= QTime(0, 0, 0, 1): 
             self.time = DEFAULT_POMODORO_DURATION
 
-    
+
     def start_timer(self):
         self.isRunning = True
         self.session.start_time = datetime.now()
@@ -256,11 +230,3 @@ class Chronopio(QWidget):
         self.timer.stop()
         self.save_data()
         self.update_reset_button_state()
-
-
-
-
-
-
-
-

@@ -15,7 +15,7 @@ class NewTaskDialog(QDialog):
         layout = QVBoxLayout()
         self.setLayout(layout)
 
-        # Task tike input
+        # Task input
         self.titleEdit = QLineEdit()
         self.titleEdit.textChanged.connect(self.validate)
         layout.addWidget(QLabel("Task title:"))

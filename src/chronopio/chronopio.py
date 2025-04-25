@@ -234,7 +234,9 @@ class Chronopio(QWidget):
             timerInterval = selectintervaldialog.IntervalDialog(self)
             if timerInterval.exec() == QDialog.Accepted:
                 self.timerInterval = timerInterval.get_interval()
-
+                if self.timerInterval == QTime(0, 0, 0): return
+            else: 
+                return
         self.toggle_session(TimerMode.TIMER, self.timerButton, "mdi.timer")
 
 

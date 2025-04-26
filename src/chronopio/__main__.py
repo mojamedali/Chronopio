@@ -1,10 +1,10 @@
 def main():
     import sys
     from PySide6.QtWidgets import QApplication
-    from .chronopio import Chronopio
+    from .MainWindow import MainWindow
 
     app = QApplication(sys.argv)
-    window = Chronopio()
+    window = MainWindow()
     window.show()
     sys.exit(app.exec())
 

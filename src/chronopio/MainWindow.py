@@ -1,7 +1,7 @@
 from pathlib import Path
 import qtawesome as qta
 from PySide6.QtWidgets import QMainWindow, QTabWidget, QSystemTrayIcon, QMenu, QApplication
-from PySide6.QtGui import QIcon, QAction
+from PySide6.QtGui import QAction
 from .Chronopio import Chronopio
 from .DetailsView import DetailsView
 
@@ -23,6 +23,7 @@ class MainWindow(QMainWindow):
         event.ignore()
         self.hide()
         self.showHideAction.setText("Show window")
+        self.pauseAction.setEnabled(self.chronopioWidget.isRunning)
         self.trayIcon.showMessage(
             "Chronopio",
             "Chronopio es still running in the system tray.",
@@ -32,11 +33,11 @@ class MainWindow(QMainWindow):
 
 
     def init_tabs(self):
-        self.chronopio_widget = Chronopio()
-        self.details_widget = DetailsView()
+        self.chronopioWidget = Chronopio()
+        self.detailsWidget = DetailsView()
 
-        self.tabs.addTab(self.chronopio_widget, "Main")
-        self.tabs.addTab(self.details_widget, "Sessions Details")
+        self.tabs.addTab(self.chronopioWidget, "Main")
+        self.tabs.addTab(self.detailsWidget, "Sessions Details")
 
     
     def init_tray(self):
@@ -46,8 +47,8 @@ class MainWindow(QMainWindow):
 
         trayMenu = QMenu()
 
-        self.pauseAction = QAction("Pause")
-        self.resetAction = QAction("Reset")
+        self.pauseAction = QAction("Pause", enabled=False)
+        self.resetAction = QAction("Reset", enabled=False)
         self.showHideAction = QAction("Hide window")
         self.exitAction = QAction("Exit")
 

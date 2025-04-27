@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QLabel, QComboBox, QGroupBox, QDialog
     )
 from PySide6.QtMultimedia import QSoundEffect 
-from PySide6.QtGui import QIcon
+#from PySide6.QtGui import QIcon
 from PySide6.QtCore import QTime, QTimer, Qt, QUrl
 from .SessionLogger import SessionLogger, SessionData
 from .NewTaskDialog import NewTaskDialog

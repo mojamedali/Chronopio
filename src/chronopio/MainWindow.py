@@ -19,4 +19,4 @@ class MainWindow(QMainWindow):
         self.details_widget = DetailsView()
 
         self.tabs.addTab(self.chronopio_widget, "Main")
-        self.tabs.addTab(self.details_widget, "Details")
+        self.tabs.addTab(self.details_widget, "Sessions Details")

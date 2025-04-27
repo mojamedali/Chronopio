@@ -1,8 +1,10 @@
+from datetime import datetime
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel, QTableWidget, #QTableWidgetItem, 
+    QWidget, QVBoxLayout, QLabel, QTableWidget, QTableWidgetItem, 
     QHBoxLayout, QPushButton, QDateEdit
     )
 from PySide6.QtCore import Qt, QDate
+from .SessionLogger import SessionLogger
 
 
 class DetailsView(QWidget):
@@ -40,12 +42,27 @@ class DetailsView(QWidget):
         
 
     def init_table(self):
-        self.table = QTableWidget(0, 5)
-        self.table.setHorizontalHeaderLabels(["Task", "Start Time", "End Time", "Duration", "Mode"])
-        self.layout.addWidget(self.table)
+        self.detailsTable = QTableWidget(0, 7)
+        self.detailsTable.setHorizontalHeaderLabels(["Session Date", "Task", "Start Time", "End Time", "Duration", "Mode", "Tags"])
+        self.layout.addWidget(self.detailsTable)
 
 
     def apply_filter(self):
         # Aquí después implementamos la carga de datos según fechas
-        print(f"Filtering from {self.fromDate.date().toString()} to {self.toDate.date().toString()}")
+        # print(f"Filtering from {self.fromDate.date().toString()} to {self.toDate.date().toString()}")
         # TODO: cargar sesiones desde SessionLogger y mostrarlas en la grilla
+        fromDate = int(self.fromDate.date().toString('yyyyMMdd'))
+        toDate = int(self.toDate.date().toString('yyyyMMdd'))
+
+        logger = SessionLogger()
+        sessions = logger.get_sessions_data(fromDate, toDate)
+
+        self.detailsTable.setRowCount(0)
+
+        for session in sessions:
+            rowPosition = self.detailsTable.rowCount()
+            self.detailsTable.insertRow(rowPosition)
+            for column, value in enumerate(session):
+                item = QTableWidgetItem(str(value))
+                item.setFlags(item.flags() ^ Qt.ItemIsEditable)
+                self.detailsTable.setItem(rowPosition, column, item)

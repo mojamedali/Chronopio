@@ -222,6 +222,7 @@ class Chronopio(QWidget):
         
 
     def toggle_standard_session(self):
+        self.timerInterval = QTime(0, 0, 0)
         self.toggle_session(TimerMode.STANDARD, self.standardButton, "mdi.play")
         
 
@@ -265,6 +266,7 @@ class Chronopio(QWidget):
         self.taskCombo.setEnabled(False)
         if self.time <= QTime(0, 0, 0, 1):
             self.time = self.timerInterval
+        self.timerLabel.setText(self.time.toString("hh:mm:ss"))
 
 
     def stop_timer(self):

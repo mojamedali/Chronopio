@@ -9,12 +9,12 @@ from PySide6.QtWidgets import (
 from PySide6.QtMultimedia import QSoundEffect 
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import QTime, QTimer, Qt, QUrl
-from . import sessionlogger as sl
-from . import newtaskdialog
-from . import selectintervaldialog 
+from .SessionLogger import SessionLogger, SessionData
+from .NewTaskDialog import NewTaskDialog
+from .SelectIntervalDialog import IntervalDialog 
 
 
-DEFAULT_POMODORO_DURATION = QTime(0, 25, 0, 0)
+DEFAULT_POMODORO_DURATION = QTime(0, 0, 13, 0)
 
 
 class TimerMode(Enum):
@@ -40,10 +40,10 @@ class Chronopio(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.set_window()  
         self.set_controls()
         self.set_timer()
         self.set_session() 
+        self.set_alarm_sound()
         self.load_tasks(False)
 
         self.modeButtons = [
@@ -59,12 +59,6 @@ class Chronopio(QWidget):
 
         self.time = QTime(0, 0, 0)
         self.isRunning = False
-
-
-    def set_window(self):
-        self.setWindowIcon(QIcon.fromTheme("chronopio"))
-        self.setWindowTitle("Chronopio")
-        self.resize(400, 400)
         
 
     def set_controls(self):
@@ -117,8 +111,8 @@ class Chronopio(QWidget):
 
     def set_session(self):
         self.timerMode = TimerMode.NO_MODE # Default value
-        self.logger = sl.SessionLogger()
-        self.session = sl.SessionData(
+        self.logger = SessionLogger()
+        self.session = SessionData(
                 taskid      = 0, 
                 start_time  = "00:00:00",
                 end_time    = "00:00:00",
@@ -151,6 +145,9 @@ class Chronopio(QWidget):
         self.timerLabel.setText("00:00:00")
         self.timerMode = TimerMode.NO_MODE
         self.resetButton.setEnabled(False)
+        self.pomodoroButton.setText("Pomodoro")
+        self.timerButton.setText("Timer")
+        self.standardButton.setText("Start")
         for b in self.modeButtons:
             b.setVisible(True)
         self.load_tasks(False)
@@ -194,7 +191,7 @@ class Chronopio(QWidget):
     def create_new_task(self):
         existingTasks = self.logger.get_tasks(True)
 
-        dialog = newtaskdialog.NewTaskDialog(self, existingTasks)
+        dialog = NewTaskDialog(self, existingTasks)
         if dialog.exec() == QDialog.Accepted:
             data = dialog.get_task_data()
             if not data['title']:
@@ -212,33 +209,36 @@ class Chronopio(QWidget):
 
         self.load_tasks()
         
-
-    def play_alarm(self):
+        
+    def set_alarm_sound(self):
         self.alarmAudio = QSoundEffect()
         soundPath = Path(__file__).parent.parent.parent / 'assets' / 'sounds' / 'alarm.wav'
 
         self.alarmAudio.setSource(QUrl.fromLocalFile(str(soundPath.resolve())))
         self.alarmAudio.setVolume(.9)
 
+    def play_alarm(self):
         self.alarmAudio.play()
         
 
     def toggle_standard_session(self):
+        self.timerInterval = QTime(0, 0, 0)
         self.toggle_session(TimerMode.STANDARD, self.standardButton, "mdi.play")
+        
 
     def toggle_pomodoro_session(self):
         self.toggle_session(TimerMode.POMODORO, self.pomodoroButton, "mdi.food-apple")
+        
 
     def toggle_timer_session(self):
         if self.timerMode == TimerMode.NO_MODE:
-            timerInterval = selectintervaldialog.IntervalDialog(self)
+            timerInterval = IntervalDialog(self)
             if timerInterval.exec() == QDialog.Accepted:
                 self.timerInterval = timerInterval.get_interval()
                 if self.timerInterval == QTime(0, 0, 0): return
             else: 
                 return
         self.toggle_session(TimerMode.TIMER, self.timerButton, "mdi.timer")
-
 
 
     def toggle_session(self, mode, button, icon_name):
@@ -257,8 +257,6 @@ class Chronopio(QWidget):
             button.setIcon(qta.icon("mdi.stop"))
 
 
-
-
     def start_timer(self):
         self.isRunning = True
         self.session.start_time = datetime.now()
@@ -268,6 +266,7 @@ class Chronopio(QWidget):
         self.taskCombo.setEnabled(False)
         if self.time <= QTime(0, 0, 0, 1):
             self.time = self.timerInterval
+        self.timerLabel.setText(self.time.toString("hh:mm:ss"))
 
 
     def stop_timer(self):

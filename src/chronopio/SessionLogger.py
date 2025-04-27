@@ -113,3 +113,24 @@ class SessionLogger():
         rows = cursor.fetchall()
 
         return rows
+    
+
+    def get_sessions_data(self, fromDate, toDate):
+        cursor = self.conn.cursor()
+        cursor.execute(""" 
+            SELECT s.sessiondate, t.title, 
+                       replace(substr(s.start_time, 12, 8), '.', ':') AS start_time, 
+                       replace(substr(s.end_time, 12, 8), '.', ':') AS end_time, 
+                       s.duration, s.mode, t.tags
+            FROM sessions s
+            INNER JOIN tasks t
+                ON s.task_id = t.id
+            WHERE 
+                s.sessiondate BETWEEN ? AND ?
+        """, (
+            fromDate, 
+            toDate               
+                ))
+        rows = cursor.fetchall()
+
+        return rows

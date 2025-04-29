@@ -1,9 +1,8 @@
-from pathlib import Path
-import qtawesome as qta
-from PySide6.QtWidgets import QMainWindow, QTabWidget, QSystemTrayIcon, QMenu, QApplication
-from PySide6.QtGui import QAction
+from PySide6.QtWidgets import QMainWindow, QTabWidget, QSystemTrayIcon
 from .Chronopio import Chronopio
 from .DetailsView import DetailsView
+from .SysTray import SysTray
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -22,9 +21,9 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         event.ignore()
         self.hide()
-        self.showHideAction.setText("Show window")
-        self.pauseAction.setEnabled(self.chronopioWidget.isRunning)
-        self.trayIcon.showMessage(
+        self.sysTray.show()
+        self.sysTray.stopAction.setEnabled(self.chronopioWidget.isRunning)
+        self.sysTray.show_message(
             "Chronopio",
             "Chronopio es still running in the system tray.",
             QSystemTrayIcon.Information,
@@ -41,51 +40,6 @@ class MainWindow(QMainWindow):
 
     
     def init_tray(self):
-        self.trayIcon = QSystemTrayIcon(self)
-        icon = qta.icon('fa5s.clock')
-        self.trayIcon.setIcon(icon)
+        self.sysTray = SysTray(self, self.chronopioWidget)
 
-        trayMenu = QMenu()
-
-        self.pauseAction = QAction("Pause", enabled=False)
-        self.resetAction = QAction("Reset", enabled=False)
-        self.showHideAction = QAction("Hide window")
-        self.exitAction = QAction("Exit")
-
-        trayMenu.addAction(self.pauseAction)
-        trayMenu.addAction(self.resetAction)
-        trayMenu.addSeparator()
-        trayMenu.addAction(self.showHideAction)
-        trayMenu.addSeparator()
-        trayMenu.addAction(self.exitAction)
-
-        self.trayIcon.setContextMenu(trayMenu)
-
-        self.pauseAction.triggered.connect(self.pause_clicked)
-        self.resetAction.triggered.connect(self.reset_clicked)
-        self.showHideAction.triggered.connect(self.toggle_visibility)
-        self.exitAction.triggered.connect(self.exit_clicked)
-
-        self.trayIcon.show()
-
-
-    def pause_clicked(self):
-        print("Paused")
-
-    
-    def reset_clicked(self):
-        print("Reset")
-
-    
-    def toggle_visibility(self):
-        if self.isVisible():
-            self.hide()
-            self.showHideAction.setText("Show window")
-        else:
-            self.show()
-            self.showHideAction.setText("Hide window")
-
-    
-    def exit_clicked(self):
-        QApplication.quit()
 

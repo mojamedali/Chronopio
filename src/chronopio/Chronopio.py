@@ -216,6 +216,7 @@ class Chronopio(QWidget):
 
         self.alarmAudio.setSource(QUrl.fromLocalFile(str(soundPath.resolve())))
         self.alarmAudio.setVolume(.9)
+        
 
     def play_alarm(self):
         self.alarmAudio.play()

@@ -8,7 +8,7 @@ It features:
 - 🍅 A Pomodoro timer (25 minutes countdown)  
 - ⏱️ A Timer mode (User-configurable interval)
 - ⌛ Systray integration
-- 🧮 Tasks detailed view.
+- 🧮 Tasks detailed view
 - 🔁 Reset button with contextual enable/disable logic  
 - 🎨 Icon-enhanced buttons using Material Design Icons (via `qtawesome`)  
 - 💻 Clean and intuitive PySide6 GUI  

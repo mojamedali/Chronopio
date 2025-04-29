@@ -52,7 +52,6 @@ python3 run.py
 
 ## 💡 Notes
 
-- Pomodoro mode hides the standard timer and vice versa.
 - Reset re-enables both modes and clears the time.
 - Icons from [Material Design Icons](https://materialdesignicons.com/), via `qtawesome`.
 

@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QLabel, QComboBox, QGroupBox, QDialog
     )
 from PySide6.QtMultimedia import QSoundEffect 
-from PySide6.QtGui import QIcon
+#from PySide6.QtGui import QIcon
 from PySide6.QtCore import QTime, QTimer, Qt, QUrl
 from .SessionLogger import SessionLogger, SessionData
 from .NewTaskDialog import NewTaskDialog
@@ -216,6 +216,7 @@ class Chronopio(QWidget):
 
         self.alarmAudio.setSource(QUrl.fromLocalFile(str(soundPath.resolve())))
         self.alarmAudio.setVolume(.9)
+        
 
     def play_alarm(self):
         self.alarmAudio.play()

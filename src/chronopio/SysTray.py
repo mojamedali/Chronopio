@@ -34,7 +34,7 @@ class SysTray:
 
 
     def toggle_visibility(self):
-        self.parent.show()
+        self.parent.showNormal()
         self.trayIcon.hide()
 
 

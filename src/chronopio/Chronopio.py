@@ -14,7 +14,7 @@ from .NewTaskDialog import NewTaskDialog
 from .SelectIntervalDialog import IntervalDialog 
 
 
-DEFAULT_POMODORO_DURATION = QTime(0, 0, 13, 0)
+DEFAULT_POMODORO_DURATION = QTime(0, 25, 0, 0)
 
 
 class TimerMode(Enum):

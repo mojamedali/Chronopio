@@ -9,6 +9,7 @@ It features:
 - ⏱️ A Timer mode (User-configurable interval)
 - ⌛ Systray integration
 - 🧮 Tasks detailed view
+- 📊 Chart view
 - 🔁 Reset button with contextual enable/disable logic  
 - 🎨 Icon-enhanced buttons using Material Design Icons (via `qtawesome`)  
 - 💻 Clean and intuitive PySide6 GUI  
@@ -17,7 +18,9 @@ It features:
 
 ## 📸 Preview
 
-![screenshot](docs/screenshot.png)  
+![screenshot](docs/screenshot.png) 
+![screenshot](docs/screenshot_details.png)
+![screenshot](docs/screenshot_charts.png)   
 
 ---
 

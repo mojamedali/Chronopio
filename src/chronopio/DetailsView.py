@@ -1,7 +1,8 @@
+import csv
 from datetime import datetime
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QTableWidget, QTableWidgetItem, 
-    QHBoxLayout, QPushButton, QDateEdit
+    QHBoxLayout, QPushButton, QDateEdit, QFileDialog
     )
 from PySide6.QtCore import Qt, QDate
 from .SessionLogger import SessionLogger
@@ -16,6 +17,8 @@ class DetailsView(QWidget):
 
         self.init_filters()
         self.init_table()
+
+        self.apply_filter()
         
 
     def init_filters(self):
@@ -45,6 +48,13 @@ class DetailsView(QWidget):
         self.detailsTable = QTableWidget(0, 7)
         self.detailsTable.setHorizontalHeaderLabels(["Session Date", "Task", "Start Time", "End Time", "Duration", "Mode", "Tags"])
         self.layout.addWidget(self.detailsTable)
+        self.exportButton = QPushButton("Export")
+        self.exportButton.clicked.connect(self.export_csv)
+        self.layout.addWidget(self.exportButton)
+
+        hasData = (self.detailsTable.rowCount() > 0)
+        self.exportButton.setEnabled(hasData)
+        
 
 
     def apply_filter(self):
@@ -66,3 +76,28 @@ class DetailsView(QWidget):
                 item = QTableWidgetItem(str(value))
                 item.setFlags(item.flags() ^ Qt.ItemIsEditable)
                 self.detailsTable.setItem(rowPosition, column, item)
+
+        hasData = (self.detailsTable.rowCount() > 0)
+        self.exportButton.setEnabled(hasData)
+
+
+    def export_csv(self):
+        fromDate = self.fromDate.date().toString('yyyyMMdd')
+        toDate = self.toDate.date().toString('yyyyMMdd')
+        fileName = "chronopio_" + fromDate + "_" + toDate + ".csv"
+        path, _ = QFileDialog.getSaveFileName(self, "Export to csv", fileName, "CSV files (*.csv)")
+        if not path:
+            return
+        
+        
+        tableModel = self.detailsTable.model()
+
+        with open(path, 'w', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+
+            headers = [tableModel.headerData(col, Qt.Horizontal) for col in range(tableModel.columnCount())]
+            writer.writerow(headers)
+
+            for row in range(tableModel.rowCount()):
+                rowData = [tableModel.data(tableModel.index(row, col)) for col in range(tableModel.columnCount())]
+                writer.writerow(rowData)
